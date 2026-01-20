@@ -66,39 +66,39 @@ export const utilRouter = createTRPCRouter({
                 const newFilename = `${timestamp}_${randomString}.${extension}`;
 
                 // 创建上传目录
-                const uploadDir = join(
-                    process.cwd(),
-                    'public/uploads/images',
-                    folder
-                );
+                // const uploadDir = join(
+                //     process.cwd(),
+                //     'public/uploads/images',
+                //     folder
+                // );
 
                 // 确保目录存在，如果不存在则创建
-                if (!existsSync(uploadDir)) {
-                    try {
-                        await mkdir(uploadDir, {
-                            recursive: true,
-                            mode: 0o777,
-                        });
-                    } catch (error) {
-                        console.error('创建目录失败:', error);
-                        // 尝试创建父目录
-                        const parentDir = join(
-                            process.cwd(),
-                            'public/uploads/images'
-                        );
-                        if (!existsSync(parentDir)) {
-                            await mkdir(parentDir, {
-                                recursive: true,
-                                mode: 0o777,
-                            });
-                        }
-                        // 再次尝试创建目标目录
-                        await mkdir(uploadDir, {
-                            recursive: true,
-                            mode: 0o777,
-                        });
-                    }
-                }
+                // if (!existsSync(uploadDir)) {
+                //     try {
+                //         await mkdir(uploadDir, {
+                //             recursive: true,
+                //             mode: 0o777,
+                //         });
+                //     } catch (error) {
+                //         console.error('创建目录失败:', error);
+                //         // 尝试创建父目录
+                //         const parentDir = join(
+                //             process.cwd(),
+                //             'public/uploads/images'
+                //         );
+                //         if (!existsSync(parentDir)) {
+                //             await mkdir(parentDir, {
+                //                 recursive: true,
+                //                 mode: 0o777,
+                //             });
+                //         }
+                //         // 再次尝试创建目标目录
+                //         await mkdir(uploadDir, {
+                //             recursive: true,
+                //             mode: 0o777,
+                //         });
+                //     }
+                // }
 
                 // 将 base64 转换为 buffer
                 const base64Data = image.replace(
@@ -108,9 +108,9 @@ export const utilRouter = createTRPCRouter({
                 const buffer = Buffer.from(base64Data, 'base64');
 
                 // 保存文件
-                const filePath = join(uploadDir, newFilename);
+                // const filePath = join(uploadDir, newFilename);
                 // await writeFile(filePath, buffer, { mode: 0o666 });
-  const blob = await put(filePath, buffer, { access: 'public' });
+  const blob = await put(newFilename, buffer, { access: 'public' });
 //   const blob = await put(filePath, buffer, {
 //     access: 'public',
 //     token: process.env.BLOB_READ_WRITE_TOKEN,
