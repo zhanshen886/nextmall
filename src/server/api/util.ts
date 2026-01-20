@@ -4,6 +4,10 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
+import { put } from '@vercel/blob';
+
+
+
 // MIME 类型到文件扩展名的映射
 const MIME_TO_EXTENSION: Record<string, string> = {
     'image/jpeg': 'jpg',
@@ -104,14 +108,15 @@ export const utilRouter = createTRPCRouter({
 
                 // 保存文件
                 const filePath = join(uploadDir, newFilename);
-                await writeFile(filePath, buffer, { mode: 0o666 });
+                // await writeFile(filePath, buffer, { mode: 0o666 });
+  const blob = await put(newFilename, image, { access: 'public' });
 
                 // 返回可访问的 URL
                 const url = `/uploads/images/${folder}/${newFilename}`;
 
                 return {
                     success: true,
-                    url,
+                    url:blob.url,
                     filename: newFilename,
                     originalFilename: filename,
                 };
