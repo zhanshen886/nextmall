@@ -109,7 +109,7 @@ export const utilRouter = createTRPCRouter({
                 // 保存文件
                 const filePath = join(uploadDir, newFilename);
                 // await writeFile(filePath, buffer, { mode: 0o666 });
-  const blob = await put(newFilename, image, { access: 'public' });
+  const blob = await put(newFilename, buffer, { access: 'public' });
 
                 // 返回可访问的 URL
                 const url = `/uploads/images/${folder}/${newFilename}`;
