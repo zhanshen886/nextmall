@@ -111,14 +111,19 @@ export const utilRouter = createTRPCRouter({
                 const filePath = join(uploadDir, newFilename);
                 // await writeFile(filePath, buffer, { mode: 0o666 });
 //   const blob = await put(filePath, buffer, { access: 'public' });
-      mkdirSync(path.dirname(filePath), { recursive: true });
-        writeFileSync(filePath,buffer);
+  const blob = await put(filePath, buffer, {
+    access: 'public',
+    token: process.env.BLOB_READ_WRITE_TOKEN,
+  });
+
+    //   mkdirSync(path.dirname(filePath), { recursive: true });
+    //     writeFileSync(filePath,buffer);
                 // 返回可访问的 URL
                 const url = `/uploads/images/${folder}/${newFilename}`;
 
                 return {
                     success: true,
-                    url:url,
+                    url:blob.url,
                     filename: newFilename,
                     originalFilename: filename,
                 };
