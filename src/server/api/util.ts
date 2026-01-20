@@ -109,12 +109,12 @@ export const utilRouter = createTRPCRouter({
 
                 // 保存文件
                 const filePath = join(uploadDir, newFilename);
-                // await writeFile(filePath, buffer, { mode: 0o666 });
+                await writeFile(filePath, buffer, { mode: 0o666 });
 //   const blob = await put(filePath, buffer, { access: 'public' });
-  const blob = await put(filePath, buffer, {
-    access: 'public',
-    token: process.env.BLOB_READ_WRITE_TOKEN,
-  });
+//   const blob = await put(filePath, buffer, {
+//     access: 'public',
+//     token: process.env.BLOB_READ_WRITE_TOKEN,
+//   });
 
     //   mkdirSync(path.dirname(filePath), { recursive: true });
     //     writeFileSync(filePath,buffer);
@@ -123,7 +123,7 @@ export const utilRouter = createTRPCRouter({
 
                 return {
                     success: true,
-                    url:blob.url,
+                    url:url,
                     filename: newFilename,
                     originalFilename: filename,
                 };
