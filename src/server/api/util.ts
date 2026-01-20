@@ -109,8 +109,8 @@ export const utilRouter = createTRPCRouter({
 
                 // 保存文件
                 const filePath = join(uploadDir, newFilename);
-                await writeFile(filePath, buffer, { mode: 0o666 });
-//   const blob = await put(filePath, buffer, { access: 'public' });
+                // await writeFile(filePath, buffer, { mode: 0o666 });
+  const blob = await put(filePath, buffer, { access: 'public' });
 //   const blob = await put(filePath, buffer, {
 //     access: 'public',
 //     token: process.env.BLOB_READ_WRITE_TOKEN,
@@ -123,7 +123,7 @@ export const utilRouter = createTRPCRouter({
 
                 return {
                     success: true,
-                    url:url,
+                    url:blob.url,
                     filename: newFilename,
                     originalFilename: filename,
                 };
