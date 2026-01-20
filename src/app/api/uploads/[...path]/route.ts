@@ -16,7 +16,7 @@ export async function GET(
         }
 
         // 构建文件路径
-        const filePath = join(process.cwd(), 'output', 'uploads', ...path);
+        const filePath = join(process.cwd(), 'public', 'uploads', ...path);
         // 检查文件是否存在
         if (!existsSync(filePath)) {
             return new NextResponse('File not found', { status: 404 });

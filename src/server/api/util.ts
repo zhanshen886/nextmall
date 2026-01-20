@@ -63,7 +63,7 @@ export const utilRouter = createTRPCRouter({
                 // 创建上传目录
                 const uploadDir = join(
                     process.cwd(),
-                    'output/uploads/images',
+                    'public/uploads/images',
                     folder
                 );
 
@@ -79,7 +79,7 @@ export const utilRouter = createTRPCRouter({
                         // 尝试创建父目录
                         const parentDir = join(
                             process.cwd(),
-                            'output/uploads/images'
+                            'public/uploads/images'
                         );
                         if (!existsSync(parentDir)) {
                             await mkdir(parentDir, {
@@ -141,7 +141,7 @@ export const utilRouter = createTRPCRouter({
                 // 创建上传目录
                 const uploadDir = join(
                     process.cwd(),
-                    'output/uploads/images',
+                    'public/uploads/images',
                     folder
                 );
                 if (!existsSync(uploadDir)) {
@@ -237,7 +237,7 @@ export const utilRouter = createTRPCRouter({
                 // 创建上传目录
                 const uploadDir = join(
                     process.cwd(),
-                    'output/uploads/videos',
+                    'public/uploads/videos',
                     folder
                 );
                 if (!existsSync(uploadDir)) {
