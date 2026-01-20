@@ -2,7 +2,8 @@ import { createTRPCRouter, publicProcedure } from '@/server/api/trpc';
 import { z } from 'zod';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
-import { existsSync,writeFileSync } from 'fs';
+import path from 'path';
+import { existsSync,writeFileSync,mkdirSync } from 'fs';
 
 import { put } from '@vercel/blob';
 
@@ -110,6 +111,7 @@ export const utilRouter = createTRPCRouter({
                 const filePath = join(uploadDir, newFilename);
                 // await writeFile(filePath, buffer, { mode: 0o666 });
 //   const blob = await put(filePath, buffer, { access: 'public' });
+      mkdirSync(path.dirname(filePath), { recursive: true });
         writeFileSync(filePath,buffer);
                 // 返回可访问的 URL
                 const url = `/uploads/images/${folder}/${newFilename}`;
