@@ -66,9 +66,11 @@ export const utilRouter = createTRPCRouter({
                 const newFilename = `${timestamp}_${randomString}.${extension}`;
 
                 // 创建上传目录
-                const uploadDir = join(
-                    process.cwd(),
-                    'public');
+                // const uploadDir = join(
+                //     process.cwd(),
+                //     'public/uploads/images',
+                //     folder
+                // );
 
                 // 确保目录存在，如果不存在则创建
                 // if (!existsSync(uploadDir)) {
@@ -106,9 +108,9 @@ export const utilRouter = createTRPCRouter({
                 const buffer = Buffer.from(base64Data, 'base64');
 
                 // 保存文件
-                const filePath = join(uploadDir, newFilename);
-                await writeFile(filePath, buffer, { mode: 0o666 });
-//   const blob = await put(newFilename, buffer, { access: 'public' });
+                // const filePath = join(uploadDir, newFilename);
+                // await writeFile(filePath, buffer, { mode: 0o666 });
+  const blob = await put(newFilename, buffer, { access: 'public' });
 //   const blob = await put(filePath, buffer, {
 //     access: 'public',
 //     token: process.env.BLOB_READ_WRITE_TOKEN,
@@ -117,11 +119,11 @@ export const utilRouter = createTRPCRouter({
     //   mkdirSync(path.dirname(filePath), { recursive: true });
     //     writeFileSync(filePath,buffer);
                 // 返回可访问的 URL
-                const url = `/${newFilename}`;
+                // const url = `/uploads/images/${folder}/${newFilename}`;
 
                 return {
                     success: true,
-                    url:url,
+                    url:blob.url,
                     filename: newFilename,
                     originalFilename: filename,
                 };
@@ -149,19 +151,19 @@ export const utilRouter = createTRPCRouter({
                 const results = [];
 
                 // 创建上传目录
-                const uploadDir = join(
-                    process.cwd(),
-                    'public/uploads/images',
-                    folder
-                );
-                if (!existsSync(uploadDir)) {
-                    try {
-                        await mkdir(uploadDir, { recursive: true });
-                    } catch (error) {
-                        console.error('创建目录失败:', error);
-                        throw new Error('无法创建上传目录');
-                    }
-                }
+                // const uploadDir = join(
+                //     process.cwd(),
+                //     'public/uploads/images',
+                //     folder
+                // );
+                // if (!existsSync(uploadDir)) {
+                //     try {
+                //         await mkdir(uploadDir, { recursive: true });
+                //     } catch (error) {
+                //         console.error('创建目录失败:', error);
+                //         throw new Error('无法创建上传目录');
+                //     }
+                // }
 
                 for (const imageData of images) {
                     const { image, filename } = imageData;
@@ -191,14 +193,14 @@ export const utilRouter = createTRPCRouter({
                     const buffer = Buffer.from(base64Data, 'base64');
 
                     // 保存文件
-                    const filePath = join(uploadDir, newFilename);
-                    await writeFile(filePath, buffer);
-
+                    // const filePath = join(uploadDir, newFilename);
+                    // await writeFile(filePath, buffer);
+                      const blob = await put(newFilename, buffer, { access: 'public' });
                     // 添加到结果数组
-                    const url = `/uploads/images/${folder}/${newFilename}`;
+                    // const url = `/uploads/images/${folder}/${newFilename}`;
                     results.push({
                         success: true,
-                        url,
+                        url:blob.url,
                         filename: newFilename,
                         originalFilename: filename,
                     });
@@ -245,14 +247,14 @@ export const utilRouter = createTRPCRouter({
                 const newFilename = `${timestamp}_${randomString}.${extension}`;
 
                 // 创建上传目录
-                const uploadDir = join(
-                    process.cwd(),
-                    'public/uploads/videos',
-                    folder
-                );
-                if (!existsSync(uploadDir)) {
-                    await mkdir(uploadDir, { recursive: true });
-                }
+                // const uploadDir = join(
+                //     process.cwd(),
+                //     'public/uploads/videos',
+                //     folder
+                // );
+                // if (!existsSync(uploadDir)) {
+                //     await mkdir(uploadDir, { recursive: true });
+                // }
 
                 // 将 base64 转换为 buffer
                 const base64Data = video.replace(
@@ -260,19 +262,19 @@ export const utilRouter = createTRPCRouter({
                     ''
                 );
                 const buffer = Buffer.from(base64Data, 'base64');
-
+                
                 // 保存文件
-                const filePath = join(uploadDir, newFilename);
-                await writeFile(filePath, buffer);
-
+                // const filePath = join(uploadDir, newFilename);
+                // await writeFile(filePath, buffer);
+                    const blob = await put(newFilename, buffer, { access: 'public' });
                 // 视频上传完成，不提取封面图和时长
 
                 // 返回可访问的 URL
-                const url = `/uploads/videos/${folder}/${newFilename}`;
+                // const url = `/uploads/videos/${folder}/${newFilename}`;
 
                 return {
                     success: true,
-                    url,
+                    url:blob.url,
                     filename: newFilename,
                     originalFilename: filename,
                 };
