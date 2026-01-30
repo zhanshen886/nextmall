@@ -20,7 +20,7 @@ async function main() {
     if (!exists) {
         await prisma.user.create({
             data: {
-                phone,
+                phone:'18225517618',
                 name: '超级管理员',
                 password: hashed,
                 role: 'SUPERADMIN',

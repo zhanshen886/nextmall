@@ -8,6 +8,7 @@ WORKDIR /app
 
 # 复制包管理文件和 Prisma schema
 COPY package.json pnpm-lock.yaml* ./
+
 COPY prisma ./prisma
 RUN corepack enable pnpm && pnpm config set registry https://mirrors.cloud.tencent.com/npm/ && pnpm i --frozen-lockfile
 
@@ -15,11 +16,12 @@ RUN corepack enable pnpm && pnpm config set registry https://mirrors.cloud.tence
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/prisma ./prisma
 COPY . .
 
 # 生成 Prisma 客户端
-RUN corepack enable pnpm && pnpm prisma generate
-
+RUN corepack enable pnpm && pnpm prisma generate && pnpm prisma migrate
+RUN corepack enable pnpm && pnpm prisma db seed
 # 构建应用
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV SKIP_ENV_VALIDATION 1
@@ -52,12 +54,17 @@ USER nextjs
 EXPOSE 3000
 
 ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
-
+# ENV HOSTNAME "0.0.0.0"
+ENV AUTH_SECRET "xf1iPS9/AZm07mEvJYrwvuvkWHp/Ar+UikY22W5qbaE="
+ENV BLOB_READ_WRITE_TOKEN "vercel_blob_rw_TZGHkytU9NWCoZ1y_tBbhK9AW6a25Vjm1lif7j0JygI4QgC"
+ENV DATABASE_URL postgres://daa87bacb60a7e42d92b707344abf93baca84644de1a9e353b698fcffd36c1cb:sk_JLrIVRvdGX58yJ5VwiYLY@db.prisma.io:5432/postgres?sslmode=require
 # 启动脚本
-COPY --from=builder /app/docker-entrypoint.sh ./
-USER root
-RUN chmod +x ./docker-entrypoint.sh
-USER nextjs
+# COPY --from=builder /app/docker-entrypoint.sh ./
+# USER root
+# RUN chmod +x docker-entrypoint.sh
+# USER nextjs
+# CMD ["/bin/sh", "docker-entrypoint.sh"]
 
-CMD ["./docker-entrypoint.sh"]
+
+
+CMD ["node_modules/.bin/next", "start"]

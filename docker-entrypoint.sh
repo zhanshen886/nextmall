@@ -8,7 +8,7 @@ sleep 3
 echo "检查数据库连接..."
 npx prisma db push --accept-data-loss || {
     echo "数据库连接失败，退出..."
-    exit 1
+    # exit 1
 }
 
 # 运行数据库迁移

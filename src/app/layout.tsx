@@ -4,6 +4,7 @@ import { type Metadata } from 'next';
 import { Provider } from './provider';
 import { TRPCReactProvider } from '@/trpc/react';
 
+import { helloWorldJob } from '@/trpc/helloWorld'
 const SITE_URL = process.env.NEXTAUTH_URL || 'https://yunzhiqiao.site';
 const SITE_NAME = '云智乔';
 const DEFAULT_TITLE = process.env.TITLE || '星禾屿';
@@ -26,11 +27,23 @@ export async function generateMetadata(): Promise<Metadata> {
     };
 }
 
+// 所有任务列表
+const JOBS = [helloWorldJob];
+// 启动所有任务
+const startAllJobs = () => {
+  JOBS.forEach(job => {
+    if (!job.isActive) {
+      job.start();
+      console.log(`Job started: ${job.name}`);
+    }
+  });
+};
 export default function RootLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    startAllJobs()
     return (
         <html lang="zh">
             <body>
