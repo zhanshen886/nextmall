@@ -7,6 +7,7 @@ import {
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { put } from '@vercel/blob';
 
 export const paymentRouter = createTRPCRouter({
     // 获取支付码
@@ -45,28 +46,28 @@ export const paymentRouter = createTRPCRouter({
                 }
 
                 // 创建上传目录
-                const uploadDir = join(
-                    process.cwd(),
-                    'public',
-                    'uploads',
-                    'payment'
-                );
-                if (!existsSync(uploadDir)) {
-                    await mkdir(uploadDir, { recursive: true });
-                }
+                // const uploadDir = join(
+                //     process.cwd(),
+                //     'public',
+                //     'uploads',
+                //     'payment'
+                // );
+                // if (!existsSync(uploadDir)) {
+                //     await mkdir(uploadDir, { recursive: true });
+                // }
 
                 // 生成文件名
                 const timestamp = Date.now();
                 const extension = imageType === 'jpeg' ? 'jpg' : imageType;
                 const filename = `payment-code-${timestamp}.${extension}`;
-                const filepath = join(uploadDir, filename);
+                // const filepath = join(uploadDir, filename);
 
                 // 保存文件
                 const buffer = Buffer.from(imageData, 'base64');
-                await writeFile(filepath, buffer);
-
+                // await writeFile(filepath, buffer);
+                const blob = await put(filename, buffer, { access: 'public' });
                 // 生成访问 URL
-                const imageUrl = `/uploads/payment/${filename}`;
+                // const imageUrl = `/uploads/payment/${filename}`;
 
                 // 删除旧的支付码记录（如果存在）
                 await ctx.db.payment.deleteMany({});
@@ -74,7 +75,7 @@ export const paymentRouter = createTRPCRouter({
                 // 保存到数据库
                 const payment = await ctx.db.payment.create({
                     data: {
-                        image: imageUrl,
+                        image: blob.url,
                         filename: input.filename,
                         originalName: input.filename,
                     },
