@@ -276,7 +276,7 @@ const Sidebar = () => {
             className="text-sm min-w-[250px] overflow-y-auto overflow-x-hidden"
         >
             <Wrap alignItems="center" gap={3}>
-                <Image src="/logo.svg" height={11} />
+                <Image src="/logo.png" height={11} />
             </Wrap>
             <br />
             {navTree.map((nav, index) => (
