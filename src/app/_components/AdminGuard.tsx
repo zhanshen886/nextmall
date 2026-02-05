@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter,usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { Box, Spinner, Flex, Text, Button } from '@chakra-ui/react';
 import { FiShield } from 'react-icons/fi';
@@ -18,13 +18,13 @@ export default function AdminGuard({
 }: AdminGuardProps) {
     const { data: session, status } = useSession();
     const router = useRouter();
-
+  const pathname = usePathname()
     useEffect(() => {
         if (status === 'loading') return; // 还在加载中
 
         if (!session) {
             // 未登录，跳转到登录页
-            router.replace('/login');
+            router.replace(`/login?redirect=${pathname}`);
             return;
         }
 
@@ -83,7 +83,7 @@ export default function AdminGuard({
                     </Text>
                     <Button
                         colorScheme="blue"
-                        onClick={() => router.push('/login')}
+                        onClick={() => router.push(`/login?redirect=${pathname}`)}
                     >
                         前往登录
                     </Button>

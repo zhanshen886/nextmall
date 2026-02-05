@@ -4,7 +4,7 @@ import { Container, Image, Input, Text, Flex, Link } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
 import { FiLock, FiPhone } from 'react-icons/fi';
 import { signIn, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams  } from 'next/navigation';
 import { Button, Field, InputGroup, PasswordInput } from '@/app/_components/ui';
 import useCustomToast from '@/app/hooks/useCustomToast';
 import { handleError } from '../utils';
@@ -16,7 +16,9 @@ type LoginForm = {
 
 export default function Login() {
     const router = useRouter();
+     
     const { data: session, update } = useSession();
+       const redirectUrl = useSearchParams()?.get('redirect');
     const {
         register,
         handleSubmit,
@@ -46,7 +48,7 @@ export default function Login() {
 
                 // 等待一小段时间确保session更新
                 setTimeout(() => {
-                    router.replace('/');
+                    router.replace(redirectUrl??'/');
                 }, 500);
             }
         } catch (error) {
@@ -66,7 +68,7 @@ export default function Login() {
             centerContent
         >
             <Image
-                src="/logo.svg"
+                src="/logo.png"
                 alt="FastAPI logo"
                 height="auto"
                 maxW="2xs"

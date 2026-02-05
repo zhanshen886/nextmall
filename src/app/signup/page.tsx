@@ -139,7 +139,7 @@ export default function SignUp() {
                 centerContent
             >
                 <Image
-                    src="/logo.svg"
+                    src="/logo.png"
                     alt="FastAPI logo"
                     height="auto"
                     maxW="2xs"

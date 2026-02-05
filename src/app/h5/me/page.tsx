@@ -44,7 +44,7 @@ import {
     DialogFooter,
     DialogCloseTrigger,
 } from '@/app/_components/ui/dialog';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import useCustomToast from '@/app/hooks/useCustomToast';
 import { ROLES } from '@/app/const/status';
 
@@ -87,6 +87,7 @@ function IconWithBadge({
 export default function MePage() {
     const { session, logout } = useAuth();
     const router = useRouter();
+     const pathname = usePathname()
     const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
     // 修改密码对话框状态
@@ -112,7 +113,7 @@ export default function MePage() {
             setChangePwdError(null);
             showSuccessToast('密码修改成功，请使用新密码登录！');
             // 可以选择执行登出操作
-            logout().then(() => router.replace('/login'));
+            logout().then(() =>   router.replace(`/login?redirect=${pathname}`));
         },
         onError(err: any) {
             setChanging(false);
@@ -185,7 +186,7 @@ export default function MePage() {
                             align="center"
                             gap={3}
                             cursor="pointer"
-                            onClick={() => router.push('/login')}
+                            onClick={() =>  router.replace(`/login?redirect=${pathname}`)}
                         >
                             <Avatar.Root>
                                 <Avatar.Fallback name="N" />
