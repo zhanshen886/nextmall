@@ -422,7 +422,7 @@ export default function AdminPage() {
                                     <Controller
                                         name="icon"
                                         control={control}
-                                        rules={{ required: '请上传图标' }}
+                                        // rules={{ required: '请上传图标' }}
                                         render={({ field }) => (
                                             <ImageUpload
                                                 value={field.value}

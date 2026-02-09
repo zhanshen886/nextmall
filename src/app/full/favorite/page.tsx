@@ -12,12 +12,15 @@ export default function FavoritePage() {
         data: favorites = [],
         refetch,
         isLoading,
+        error
     } = api.product.getFavorites.useQuery(undefined, {
         refetchOnMount: 'always',
         refetchOnWindowFocus: true,
         staleTime: 0,
         gcTime: 0,
+
     });
+    console.log('error111',error)
     const deleteFavorite = api.product.deleteFavorite.useMutation({
         onSuccess: () => refetch(),
     });
