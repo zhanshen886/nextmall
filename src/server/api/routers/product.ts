@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import {
     createTRPCRouter,
     publicProcedure,
@@ -6,6 +8,96 @@ import {
     protectedProcedure,
 } from '@/server/api/trpc';
 import { logger, logOperation } from '@/server/api/utils/logger';
+import {
+    sqlCountChildrenByParentId,
+    sqlGetParentIdsByCategoryIds,
+} from '@/server/api/utils/categorySql';
+
+/** 勿在 Prisma select 中含 parentId，旧 Client 会整段 findMany 报 Invalid invocation；parentId 由 sqlGetParentIdsByCategoryIds 补全 */
+const categorySelectForList = {
+    id: true,
+    name: true,
+} as const;
+
+type ProductListRow = {
+    specs: { price: number }[];
+    category: {
+        id: string;
+        name: string;
+        /** Prisma select 不含此项，由 withCategoryParentOnProducts 补全 */
+        parentId?: string | null;
+        parent?: { id: string; name: string } | null;
+    } | null;
+    [key: string]: unknown;
+};
+
+/** 不 include Prisma 的 parent 关系，避免 Client 未 generate 时报错；用 parentId 二次查询 */
+async function withCategoryParentOnProducts(
+    db: PrismaClient,
+    products: ProductListRow[]
+): Promise<ProductListRow[]> {
+    const categoryIds = [
+        ...new Set(
+            products
+                .map((p) => p.category?.id)
+                .filter((id): id is string => !!id)
+        ),
+    ];
+    const parentByCategoryId =
+        await sqlGetParentIdsByCategoryIds(db, categoryIds);
+    const withPid = products.map((p) => {
+        if (!p.category) return p;
+        const parentId =
+            parentByCategoryId.get(p.category.id) ?? null;
+        return {
+            ...p,
+            category: { ...p.category, parentId },
+        };
+    });
+    const parentIds = [
+        ...new Set(
+            withPid
+                .map((p) => p.category?.parentId)
+                .filter((id): id is string => !!id)
+        ),
+    ];
+    if (parentIds.length === 0) {
+        return withPid.map((p) => ({
+            ...p,
+            category: p.category
+                ? { ...p.category, parent: null as { id: string; name: string } | null }
+                : null,
+        }));
+    }
+    const parents = await db.category.findMany({
+        where: { id: { in: parentIds } },
+        select: { id: true, name: true },
+    });
+    const map = new Map(parents.map((x) => [x.id, x]));
+    return withPid.map((p) => ({
+        ...p,
+        category: p.category
+            ? {
+                  ...p.category,
+                  parent: p.category.parentId
+                      ? (map.get(p.category.parentId) ?? null)
+                      : null,
+              }
+            : null,
+    }));
+}
+
+/** 商品只能挂在「叶子分类」上（无子分类） */
+async function requireCategoryAcceptsProducts(
+    db: PrismaClient,
+    categoryId: string | undefined | null
+) {
+    if (!categoryId) return;
+    const childCount = await sqlCountChildrenByParentId(db, categoryId);
+    if (childCount > 0) {
+        throw new Error('商品只能关联到叶子分类（无子分类的分类）');
+    }
+}
 
 export const productRouter = createTRPCRouter({
     // 获取所有商品，支持排序、搜索和分页
@@ -16,6 +108,8 @@ export const productRouter = createTRPCRouter({
                     orderBy: z.string().optional(),
                     order: z.enum(['asc', 'desc']).optional(),
                     categoryId: z.string().optional(),
+                    /** 按一级分类筛选：自动包含其下所有二级分类的商品 */
+                    parentCategoryId: z.string().optional(),
                     search: z.string().optional(),
                     page: z.number().min(1).optional().default(1),
                     pageSize: z.number().min(1).max(100).optional().default(10),
@@ -34,6 +128,26 @@ export const productRouter = createTRPCRouter({
             // 分类筛选
             if (input?.categoryId) {
                 where.categoryId = input.categoryId;
+            } else if (input?.parentCategoryId) {
+                const childCount = await sqlCountChildrenByParentId(
+                    ctx.db,
+                    input.parentCategoryId
+                );
+                if (childCount > 0) {
+                    const children = await ctx.db.$queryRaw<
+                        Array<{ id: string }>
+                    >(
+                        Prisma.sql`
+                            SELECT id FROM "Category"
+                            WHERE "parentId" = ${input.parentCategoryId}
+                        `
+                    );
+                    where.categoryId = {
+                        in: children.map((c) => c.id),
+                    };
+                } else {
+                    where.categoryId = input.parentCategoryId;
+                }
             }
 
             // 搜索功能
@@ -56,10 +170,19 @@ export const productRouter = createTRPCRouter({
                     input.orderBy === 'price_desc'
                 ) {
                     // 对于价格排序，我们先获取所有商品，然后在内存中排序
-                    const allProducts = await ctx.db.product.findMany({
+                    const allProductsRaw = await ctx.db.product.findMany({
                         where,
-                        include: { specs: true },
+                        include: {
+                            specs: true,
+                            category: {
+                                select: categorySelectForList,
+                            },
+                        },
                     });
+                    const allProducts = await withCategoryParentOnProducts(
+                        ctx.db,
+                        allProductsRaw
+                    );
 
                     // 按最低价格排序
                     const sortedProducts = allProducts.sort((a, b) => {
@@ -96,13 +219,19 @@ export const productRouter = createTRPCRouter({
             const total = await ctx.db.product.count({ where });
 
             // 获取分页数据
-            const data = await ctx.db.product.findMany({
+            const dataRaw = await ctx.db.product.findMany({
                 orderBy,
                 where,
-                include: { specs: true },
+                include: {
+                    specs: true,
+                    category: {
+                        select: categorySelectForList,
+                    },
+                },
                 skip,
                 take: pageSize,
             });
+            const data = await withCategoryParentOnProducts(ctx.db, dataRaw);
 
             // 如果是搜索操作，记录搜索结果
             if (input?.search) {
@@ -147,6 +276,7 @@ export const productRouter = createTRPCRouter({
         )
         .mutation(async ({ ctx, input }) => {
             const { specs, ...productData } = input;
+            await requireCategoryAcceptsProducts(ctx.db, input.categoryId);
             const product = await ctx.db.product.create({
                 data: {
                     ...productData,
@@ -196,6 +326,13 @@ export const productRouter = createTRPCRouter({
         )
         .mutation(async ({ ctx, input }) => {
             const { id, specs, ...productData } = input;
+
+            if (productData.categoryId) {
+                await requireCategoryAcceptsProducts(
+                    ctx.db,
+                    productData.categoryId
+                );
+            }
 
             if (specs && specs.length > 0) {
                 // 分离需要更新和新建的规格

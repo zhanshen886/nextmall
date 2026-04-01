@@ -8,9 +8,9 @@ import {
     useDisclosure,
     Text,
     Input,
-    Switch,
     Stack,
     Field,
+    NativeSelect,
 } from '@chakra-ui/react';
 import DataTable from '../_components/DataTable';
 import { api } from '@/trpc/react';
@@ -26,6 +26,9 @@ type Category = {
     name: string;
     description?: string;
     icon?: string;
+    parentId?: string | null;
+    parent?: { id: string; name: string } | null;
+    _count?: { children: number; products: number };
     createdAt: Date;
     updatedAt: Date;
 };
@@ -58,6 +61,8 @@ export default function AdminPage() {
     const categories = categoryResponse?.data ?? [];
     const pageCount = categoryResponse?.pagination?.totalPages ?? 0;
 
+    const { data: rootCategories = [] } = api.category.roots.useQuery();
+
     // 分页回调函数
     const handlePaginationChange = (newPagination: {
         pageIndex: number;
@@ -87,10 +92,14 @@ export default function AdminPage() {
         handleSubmit,
         reset,
         formState: { errors, isSubmitting },
-        setValue,
         control,
     } = useForm<CategoryForm>({
-        defaultValues: { name: '', description: '', icon: '' },
+        defaultValues: {
+            name: '',
+            description: '',
+            icon: '',
+            parentId: '',
+        },
     });
 
     const openEdit = (category?: any) => {
@@ -100,25 +109,41 @@ export default function AdminPage() {
                 name: category.name ?? '',
                 description: category.description ?? '',
                 icon: category.icon ?? '',
+                parentId: category.parentId ?? '',
             });
         } else {
-            reset({ name: '', description: '', icon: '' });
+            reset({ name: '', description: '', icon: '', parentId: '' });
         }
         onOpen();
     };
 
     const onSubmit = async (data: CategoryForm) => {
-        // Ensure no nulls for string fields
-        const payload = {
-            ...data,
+        const parentId =
+            data.parentId && String(data.parentId).length > 0
+                ? data.parentId
+                : null;
+        const base = {
             name: data.name ?? '',
             description: data.description ?? '',
             icon: data.icon ?? '',
         };
+        const hasChildren =
+            editing && (editing._count?.children ?? 0) > 0;
         if (editing) {
-            await updateCategory.mutateAsync({ ...payload, id: editing.id });
+            if (hasChildren) {
+                await updateCategory.mutateAsync({
+                    id: editing.id,
+                    ...base,
+                });
+            } else {
+                await updateCategory.mutateAsync({
+                    id: editing.id,
+                    ...base,
+                    parentId,
+                });
+            }
         } else {
-            await createCategory.mutateAsync(payload);
+            await createCategory.mutateAsync({ ...base, parentId });
         }
         onClose();
     };
@@ -186,6 +211,20 @@ export default function AdminPage() {
 
     const columns = useMemo(
         () => [
+            {
+                id: 'level',
+                header: '层级',
+                width: 80,
+                cell: ({ row }: { row: any }) =>
+                    row.original.parentId ? '二级' : '一级',
+            },
+            {
+                accessorKey: 'parent',
+                header: '父分类',
+                width: 120,
+                cell: ({ row }: { row: any }) =>
+                    row.original.parent?.name ?? '—',
+            },
             { accessorKey: 'name', header: '名称', width: 150 },
             { accessorKey: 'description', header: '描述', width: 200 },
             {
@@ -377,6 +416,42 @@ export default function AdminPage() {
                         </Heading>
                         <form onSubmit={handleSubmit(onSubmit)}>
                             <Stack gap={2}>
+                                <Field.Root>
+                                    <Field.Label>上级分类</Field.Label>
+                                    <NativeSelect.Root size="md">
+                                        <NativeSelect.Field
+                                            disabled={
+                                                !!(
+                                                    editing &&
+                                                    (editing._count?.children ??
+                                                        0) > 0
+                                                )
+                                            }
+                                            {...register('parentId')}
+                                        >
+                                            <option value="">
+                                                一级分类（无上级）
+                                            </option>
+                                            {rootCategories
+                                                .filter(
+                                                    (r) =>
+                                                        r.id !== editing?.id
+                                                )
+                                                .map((r) => (
+                                                    <option
+                                                        key={r.id}
+                                                        value={r.id}
+                                                    >
+                                                        {r.name}
+                                                    </option>
+                                                ))}
+                                        </NativeSelect.Field>
+                                        <NativeSelect.Indicator />
+                                    </NativeSelect.Root>
+                                    <Text fontSize="xs" color="gray.500">
+                                        选择一级分类则创建二级子分类；留空为一级。若一级下已有商品，需先清空商品再建子类。
+                                    </Text>
+                                </Field.Root>
                                 <Field.Root invalid={!!errors.name}>
                                     <Field.Label>名称</Field.Label>
                                     <Input

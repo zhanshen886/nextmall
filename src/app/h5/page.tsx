@@ -17,14 +17,14 @@ export default function H5Home() {
         api.banner.list.useQuery({ isActive: true, orderBy: 'sort' });
     const banners = bannerResponse?.data ?? [];
 
-    const { data: categoryResponse, isLoading: categoryLoading } =
-        api.category.list.useQuery(undefined, {
+    const { data: categoryRoots = [], isLoading: categoryLoading } =
+        api.category.roots.useQuery(undefined, {
             refetchOnMount: 'always',
             refetchOnWindowFocus: true,
             staleTime: 1000 * 60, // 1分钟缓存
             gcTime: 1000 * 60 * 5, // 5分钟垃圾回收
         });
-    const category = categoryResponse?.data ?? [];
+    const category = categoryRoots;
 
     const { data: productResponse, isLoading: productsLoading } =
         api.product.list.useQuery({
@@ -86,7 +86,7 @@ export default function H5Home() {
                     {category?.map((entry: any) => (
                         <Link
                             href={`/h5/category?id=${entry.id}`}
-                            key={entry.name}
+                            key={entry.id}
                         >
                             <Flex
                                 direction="column"
@@ -187,7 +187,11 @@ export default function H5Home() {
                                         >
                                             ￥
                                         </Text>
-                                        {item.specs[0]?.price.toFixed(2)}
+                                        {item.specs?.[0]?.price != null
+                                            ? Number(
+                                                  item.specs[0].price
+                                              ).toFixed(2)
+                                            : '--'}
                                     </Text>
                                     <Text
                                         fontSize="2xs"

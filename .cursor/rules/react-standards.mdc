@@ -1,0 +1,50 @@
+---
+description: React 组件、Hooks 与 UI 交互约定（与框架无关的通用规范）
+globs: "**/*.{tsx,jsx}"
+alwaysApply: true
+---
+
+# React 项目规范
+
+## 组件
+
+- 使用**函数组件**；组件名 `PascalCase`，与文件名导出主组件一致（便于搜索与重构）。
+- 单个文件以**一个主导出**为主；复杂 UI 拆成子组件或 `components/` 下独立文件，避免单文件过长。
+- Props 用 **显式类型**（`type`/`interface`）；避免把 `children` 与业务 props 混成松散对象；可选属性用 `?` 并在注释或 JSDoc 说明语义。
+
+## Hooks
+
+- **仅在函数组件或自定义 Hook 顶层**调用 Hooks，不在循环、条件或嵌套函数里调用。
+- 自定义 Hook 必须以 **`use` 前缀**命名，且可组合其他 Hook；返回元组或对象时保持调用方稳定约定。
+- `useEffect` 写明**依赖数组**；仅挂载一次时确认依赖为空 `[]` 是否合理，避免遗漏依赖导致陈旧闭包。
+- 需要稳定引用时再使用 `useCallback`/`useMemo`/`memo`，**不为「优化而优化」**；先保证正确性再测性能。
+
+## 状态与数据流
+
+- 状态尽量**就近**；跨层共享再用 Context / 状态库，避免全局化一切。
+- 服务端拉取的数据与本地 UI 状态分离；**不要把可序列化边界外的数据**（如 Promise、大型类实例）塞进 React state。
+
+## 列表与事件
+
+- 列表渲染必须提供**稳定且唯一**的 `key`（优先业务 id，避免用数组下标作为 key，除非静态列表）。
+- 事件处理器：`onClick={handle}` 传函数引用，避免行内 `onClick={() => ...}` 在重渲染子组件时造成不必要的子组件更新（热路径上再优化）。
+
+## 表单与可访问性
+
+- 表单控件关联 **`<label htmlFor>`** 或包在 `label` 内；交互元素支持键盘操作与可见焦点样式。
+- 图片与图标：有信息含义时提供 **`alt`** 或 `aria-label`；装饰性图片用空 `alt=""`。
+
+## 反例与正例
+
+```tsx
+// ❌ BAD：条件中调用 Hook
+if (open) {
+  const [x, setX] = useState(0);
+}
+
+// ✅ GOOD：Hook 在顶层，用状态派生 UI
+const [open, setOpen] = useState(false);
+// const panel = open ? <Panel /> : null;
+```
+
+> 自定义 Hook 写在 `.ts` 文件中时，同样遵守本节 Hooks 与命名约定。

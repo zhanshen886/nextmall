@@ -106,7 +106,11 @@ export default function ProductList({
                                     >
                                         ￥
                                     </Text>
-                                    {item.specs[0]?.price.toFixed(2)}
+                                    {item.specs?.[0]?.price != null
+                                        ? Number(item.specs[0].price).toFixed(
+                                              2
+                                          )
+                                        : '--'}
                                 </Text>
                                 <Text
                                     fontSize="2xs"

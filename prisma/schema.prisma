@@ -275,9 +275,14 @@ model Category {
   name        String       // 类别名称
   description String      // 类别描述
   icon        String      // 类别图标
-  products    Product[]    // 类别下的商品
+  parentId    String?      // 父分类ID（一级为 null，二级指向一级）
+  parent      Category?    @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children    Category[]   @relation("CategoryTree")
+  products    Product[]    // 类别下的商品（仅允许挂在「叶子分类」上：无子分类时可挂商品）
   createdAt   DateTime     @default(now()) // 创建时间
   updatedAt   DateTime     @updatedAt @default(now()) // 更新时间
+
+  @@index([parentId])
 }
 
 model CoursePlayRecord {

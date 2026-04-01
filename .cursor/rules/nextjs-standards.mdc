@@ -1,0 +1,46 @@
+---
+description: Next.js（App Router）项目结构与数据获取约定
+globs: "**/*.{ts,tsx}"
+alwaysApply: true
+---
+
+# Next.js 项目规范
+
+## App Router 与组件边界
+
+- 默认 **Server Component**；仅在需要浏览器 API、事件、`useState`/`useEffect`/`useContext` 等的文件顶部加 `'use client'`，并保持客户端边界尽量小（可拆子组件）。
+- 不要把含密钥或私有环境变量的逻辑放进客户端组件或 `NEXT_PUBLIC_` 变量。
+- 需要 `useSearchParams` 等易触发静态/动态边界问题的 API 时，按官方建议用 `Suspense` 包裹或隔离到子组件。
+
+## 数据获取与缓存
+
+- Server Component 内优先 `fetch` 并合理使用 `cache` / `next: { revalidate }` / `tags`（与 `revalidateTag` 搭配），保持与业务一致的缓存策略。
+- 需要 ORM（如 Prisma）时：**不要在客户端组件直接连库**；通过 Server Action、Route Handler 或 tRPC 等仅在服务端执行的层访问数据库。
+- `cookies()`、`headers()` 会参与动态渲染，避免在整站布局中无必要调用导致全站无法静态化。
+
+## 路由与文件约定
+
+- 使用 **嵌套 layout** 组织共享 UI；页面专用 UI 放在对应 `page.tsx`，`loading.tsx` / `error.tsx` / `not-found` 按需提供。
+- **Route Handler** 放在 `route.ts`：正确使用 HTTP 动词，返回 `Response`/`NextResponse`，校验输入（如 zod），错误映射为合适状态码。
+- 动态段 `[id]` 与 `generateStaticParams`（若需要 SSG）保持类型与运行时一致。
+
+## 资源与链接
+
+- 图片用 **`next/image`**（配置 `remotePatterns` 后再用远程 URL）；列表大图注意 `sizes` 与优先级，避免 LCP 退化。
+- 站内导航用 **`next/link`**，避免裸 `<a>` 整页刷新（外链除外）。
+
+## 配置与环境
+
+- 公共配置放 `next.config.ts`（或 `.mjs`），环境变量区分服务端与 `NEXT_PUBLIC_*`；**不把 `.env.local` 提交进 Git**。
+- `middleware` 保持轻量：只做鉴权、重定向、重写等，避免重逻辑或慢 IO。
+
+## 反例与正例
+
+```tsx
+// ❌ BAD：在客户端拉取带密钥的接口
+'use client';
+fetch(process.env.ADMIN_SECRET + '/api/...');
+
+// ✅ GOOD：在 Server Component 或 route 中调用，密钥仅服务端可读
+// app/api/.../route.ts 或 server action 内使用 process.env.ADMIN_SECRET
+```

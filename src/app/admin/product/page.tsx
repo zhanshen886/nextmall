@@ -70,9 +70,8 @@ export default function AdminPage() {
         onSuccess: () => refetch(),
     });
 
-    // 获取分类列表用于下拉
-    const { data: categoryResponse } = api.category.list.useQuery();
-    const categories = categoryResponse?.data ?? [];
+    // 仅叶子分类可关联商品（含仅一级且无子类的情况）
+    const { data: leafCategories = [] } = api.category.leafCategories.useQuery();
     // 供应商
     const { data: vendors = [] } = api.user.getAllVendors.useQuery();
 
@@ -231,7 +230,18 @@ export default function AdminPage() {
                     row.original.isActive ? '是' : '否',
             },
             { accessorKey: 'sales', header: '销量', width: 80 },
-            { accessorKey: 'categoryId', header: '分类ID', width: 120 },
+            {
+                accessorKey: 'category',
+                header: '分类',
+                width: 160,
+                cell: ({ row }: { row: any }) => {
+                    const c = row.original.category;
+                    if (!c) return row.original.categoryId ?? '—';
+                    return c.parent
+                        ? `${c.parent.name} / ${c.name}`
+                        : c.name;
+                },
+            },
             {
                 accessorKey: 'createdAt',
                 header: '创建时间',
@@ -412,14 +422,18 @@ export default function AdminPage() {
                                                     required: '请选择分类',
                                                 })}
                                             >
-                                                {categories.map((cat: any) => (
-                                                    <option
-                                                        key={cat.id}
-                                                        value={cat.id}
-                                                    >
-                                                        {cat.name}
-                                                    </option>
-                                                ))}
+                                                {leafCategories.map(
+                                                    (cat: any) => (
+                                                        <option
+                                                            key={cat.id}
+                                                            value={cat.id}
+                                                        >
+                                                            {cat.parent
+                                                                ? `${cat.parent.name} / ${cat.name}`
+                                                                : cat.name}
+                                                        </option>
+                                                    )
+                                                )}
                                             </NativeSelect.Field>
                                             <NativeSelect.Indicator />
                                         </NativeSelect.Root>

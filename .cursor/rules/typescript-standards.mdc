@@ -1,0 +1,59 @@
+---
+description: TypeScript/TSX 项目编码规范（类型、模块、异步、命名）
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# TypeScript 项目规范
+
+## 类型
+
+- 启用并遵守 `strict`；避免 `any`，未知结构用 `unknown` 再收窄。
+- 公共 API、导出函数与组件 props 必须写明类型或依赖可靠推断；少用双重断言 `as unknown as T`。
+- `Record<string, unknown>` 优于 `Record<string, any>`；索引签名需说明键的语义。
+- 可空统一用 `T | null` / `T | undefined` 并在边界处理，避免混用导致重复判空。
+
+## 模块与导入
+
+- 优先 `import type` 引入仅类型依赖，减轻打包与循环引用风险。
+- 导入顺序：外部包 → 内部别名（如 `@/`）→ 相对路径；组间空一行。
+- 同一目录内避免桶文件过度 re-export 导致难以追踪；新代码优先直接导入定义处。
+- 无副作用的 `import './x.css'` 等放在文件顶部或框架约定位置。
+
+## 命名
+
+- 变量/函数：`camelCase`；类/类型/接口：`PascalCase`；常量可为 `SCREAMING_SNAKE`（若团队已有约定则一致即可）。
+- 布尔以 `is`/`has`/`should` 等前缀表达语义；异步函数名不必强制 `async` 前缀，但需体现动词。
+
+## 异步与错误
+
+- `async` 函数内对可能失败的操作要有明确错误路径：记录、映射为用户可读信息或向上抛出带 `cause` 的包装错误。
+- 禁止空 `catch`；禁止静默吞掉异常。必须忽略时写明注释原因。
+- `Promise` 链或 `void` 触发的异步在 React 等场景用 `void run()` 或显式处理 rejection，避免未处理 Promise。
+
+## 控制流与风格
+
+- 优先早返回减少嵌套；复杂分支抽成命名良好的小函数。
+- 默认 `const`，需重新赋值再用 `let`；避免可变 `let` 大范围贯穿。
+- `switch` 处理联合类型时尽量穷尽，必要时用 `never` 做穷尽检查。
+
+## 与框架协作（Next/React）
+
+- 客户端组件与服务器组件边界遵守项目既有约定；`use client` 仅加在必要文件。
+- 事件处理器类型使用框架/DOM 提供的类型，避免手写宽松签名。
+
+## 反例与正例
+
+```typescript
+// ❌ BAD
+function load(id: any) {
+  return fetch(`/api/${id}`).then((r) => r.json());
+}
+
+// ✅ GOOD
+async function load(id: string): Promise<unknown> {
+  const res = await fetch(`/api/${id}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`, { cause: res });
+  return res.json();
+}
+```

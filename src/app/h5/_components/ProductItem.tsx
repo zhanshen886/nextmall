@@ -62,7 +62,12 @@ export default function ProductItem({
                                     textAlign="left"
                                     fontWeight="medium"
                                 >
-                                    ￥{item.specs[0]?.price.toFixed(2)}
+                                    ￥
+                                    {item.specs?.[0]?.price != null
+                                        ? Number(item.specs[0].price).toFixed(
+                                              2
+                                          )
+                                        : '--'}
                                 </Text>
                                 <Flex align="center" justify="space-between">
                                     <Text
